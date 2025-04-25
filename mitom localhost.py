@@ -1,7 +1,5 @@
 from flask import Flask, request, abort
 import logging
-import os
-import pandas as pd
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, PostbackEvent, TextMessage, TextSendMessage, FlexSendMessage
@@ -12,9 +10,9 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# LINE info (lấy từ biến môi trường cho bảo mật)
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', 'mf1SA+Go407sKuw3xMI9qnylkLb822PcMCZa6NNRYx3x0cP8opUdMlrLrhmAEI4oy8kNMUxhQav1i54x8G8qkO4RZVebj6FMtFDaBDdZVXOkbtKmo4w9AOqbNIEiUXFWzum8tsFb3kq8y9xlKKgt5AdB04t89/1O/w1cDnyilFU=')
-LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', 'c5771c686254e1e0d75f0ef65180b1da')
+# LINE info
+LINE_CHANNEL_ACCESS_TOKEN = 'mf1SA+Go407sKuw3xMI9qnylkLb822PcMCZa6NNRYx3x0cP8opUdMlrLrhmAEI4oy8kNMUxhQav1i54x8G8qkO4RZVebj6FMtFDaBDdZVXOkbtKmo4w9AOqbNIEiUXFWzum8tsFb3kq8y9xlKKgt5AdB04t89/1O/w1cDnyilFU='
+LINE_CHANNEL_SECRET = 'c5771c686254e1e0d75f0ef65180b1da'
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -79,20 +77,6 @@ MENU_FLEX_MESSAGE = {
     }
 }
 
-# Hàm đọc file dữ liệu và tính toán tồn kho
-def calculate_inventory():
-    try:
-        # Đọc file inventory.csv
-        df = pd.read_csv('inventory.csv')
-        total_quantity = df['quantity'].sum()
-        return f"Tồn kho hiện tại: {total_quantity} sản phẩm"
-    except FileNotFoundError:
-        logger.error("File inventory.csv not found")
-        return "Lỗi: Không tìm thấy file dữ liệu tồn kho!"
-    except Exception as e:
-        logger.error(f"Error reading inventory file: {str(e)}")
-        return "Lỗi khi xử lý dữ liệu tồn kho!"
-
 # Hàm gọi phản hồi cho tin nhắn
 def get_message_response(user_message):
     if user_message == '!menu':
@@ -106,7 +90,7 @@ def get_message_response(user_message):
 # Hàm gọi phản hồi cho postback
 def get_postback_response(postback_data):
     if postback_data == "action=inventory_check":
-        return TextSendMessage(text=calculate_inventory())
+        return TextSendMessage(text="Tồn kho hiện tại: 100 sản phẩm")
     elif postback_data == "action=revenue_report":
         return TextSendMessage(text="Doanh thu hôm nay: 10,000,000 VND (dữ liệu mẫu)")
     elif postback_data == "action=sales_review":
@@ -171,5 +155,4 @@ def home():
     return "Bot Line đang hoạt động nè!"
 
 if __name__ == "__main__":
-    port = int(os.getenv('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=8000, debug=True)
