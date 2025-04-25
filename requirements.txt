@@ -1,1 +1,4 @@
-flask==2.3.3 line-bot-sdk==3.11.0 pandas==2.2.2 gunicorn==22.0.0
+flask==2.3.3
+line-bot-sdk==3.11.0
+pandas==2.2.2
+gunicorn==22.0.0
