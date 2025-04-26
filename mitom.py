@@ -94,6 +94,7 @@ def calculate_inventory():
         return "Lỗi khi xử lý dữ liệu tồn kho!"
 
 # Hàm gọi phản hồi cho tin nhắn
+# Hàm gọi phản hồi cho tin nhắn
 def get_message_response(user_message):
     if user_message == '!menu':
         try:
@@ -101,9 +102,10 @@ def get_message_response(user_message):
         except Exception as e:
             logger.error(f"Error creating FlexSendMessage: {str(e)}")
             return TextSendMessage(text="Lỗi khi hiển thị menu, vui lòng thử lại!")
-    if user_message == 'tôm ơi':
-        return 'meow'
-    #return TextSendMessage(text="Vui lòng gửi '!menu' để xem menu!")
+    if user_message.lower() == 'tôm ơi':
+        return TextSendMessage(text="meow")
+    # Không trả về gì cho các tin nhắn khác
+    return None
 
 # Hàm gọi phản hồi cho postback
 def get_postback_response(postback_data):
