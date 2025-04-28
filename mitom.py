@@ -142,9 +142,16 @@ def handle_message(event):
         user_message = event.message.text
         try:
             reply_message = get_message_response(user_message)
+            if reply_message is None:
+                logger.info(f"Ignoring message: {user_message}")
+                return  # Không gửi phản hồi nếu reply_message là None
             line_bot_api.reply_message(event.reply_token, reply_message)
         except LineBotApiError as e:
             logger.error(f"LINE API error: {str(e)}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="Lỗi API LINE, vui lòng thử lại!")
+            )
         except Exception as e:
             logger.error(f"Error handling message: {str(e)}")
             line_bot_api.reply_message(
