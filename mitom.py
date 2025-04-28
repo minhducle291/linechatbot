@@ -102,8 +102,16 @@ def get_message_response(user_message):
         except Exception as e:
             logger.error(f"Error creating FlexSendMessage: {str(e)}")
             return TextSendMessage(text="Lỗi khi hiển thị menu, vui lòng thử lại!")
-    if user_message.lower() == 'tôm ơi':
+    if user_message.lower() == 'tôm':
         return TextSendMessage(text="meow")
+    if 'ơi' in user_message.lower():
+        return TextSendMessage(text="ai kêu tôi đó")
+    if 'ngủ đi' in user_message.lower():
+        return TextSendMessage(text="còn sớm ngủ gì ba")
+    if 'jack' in user_message.lower():
+        return TextSendMessage(text="ai nói gì idol tui đó")
+    if 'ăn cơm' in user_message.lower():
+        return TextSendMessage(text="ăn gì đó? có pate khum?")
     # Không trả về gì cho các tin nhắn khác
     return None
 
