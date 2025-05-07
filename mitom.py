@@ -10,7 +10,14 @@ import re
 app = Flask(__name__)
 
 # Cấu hình logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('bot.log', encoding='utf-8'),  # Ghi log vào file bot.log
+        logging.StreamHandler()  # In log ra console (tùy chọn)
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # LINE info (lấy từ biến môi trường cho bảo mật)
@@ -95,67 +102,85 @@ def calculate_info():
         logger.error(f"Error reading inventory file: {str(e)}")
         return "Lỗi khi xử lý dữ liệu tồn kho!"
 
-# Hàm đọc file dữ liệu và tính toán tồn kho
+
+
+# Hàm data_thuysan (từ yêu cầu trước)
 def data_thuysan(store_keyword):
+    logger.info(f"Calling data_thuysan for store: {store_keyword}")
     try:
-        # Đọc file inventory.csv
         df = pd.read_csv('data_thuysan.csv')
         df_kq = df[df['Mã siêu thị'] == store_keyword]
-        
-        # Check if df_kq is empty
         if df_kq.empty:
+            logger.warning(f"No data found for store {store_keyword}")
             return f"Không có dữ liệu cho siêu thị {store_keyword} trong file 'data_thuysan.csv'."
-        
-        # Calculate metrics
-        sl_nhap = int(df_kq['Nhập'].sum())  # Convert to integer to remove decimals
-        sl_ban = int(df_kq['Bán'].sum())    # Convert to integer to remove decimals
-        
-        # Handle 'Tỉ lệ NG/Nhập' (e.g., "44%" → 44)
-        rate_NG_nhap = df_kq['Tỉ lệ NG/Nhập'].str.rstrip('%').astype(float).mean()  # Remove % and convert to float
-        rate_NG_nhap = round(rate_NG_nhap)  # Round to no decimals
-        
-        sl_huy_kk = int(df_kq['Huỷ và KK'].sum())  # Convert to integer to remove decimals
-        loi_nhuan = int(df_kq['Lợi nhuận'].sum())  # Convert to integer to remove decimals
-        num_rows = len(df_kq)  # Count number of rows
-        
-        # Format profit with thousand separators
+        sl_nhap = int(df_kq['Nhập'].sum())
+        sl_ban = int(df_kq['Bán'].sum())
+        rate_NG_nhap = df_kq['Tỉ lệ NG/Nhập'].str.rstrip('%').astype(float).mean()
+        rate_NG_nhap = round(rate_NG_nhap)
+        sl_huy_kk = int(df_kq['Huỷ và KK'].sum())
+        loi_nhuan = int(df_kq['Lợi nhuận'].sum())
+        num_rows = len(df_kq)
         loi_nhuan_formatted = "{:,}".format(loi_nhuan)
-        
-        # Return formatted string with row count
-        return (f'[Nhóm thuỷ sản] Siêu thị {store_keyword} theo dữ liệu 1 tuần gần nhất:\n'
-                f'- Nhập: {sl_nhap}\n'
-                f'- Bán: {sl_ban}\n'
-                f'- Tỉ lệ NG/Nhập: {rate_NG_nhap}%\n'
-                f'- Huỷ và KK: {sl_huy_kk}\n'
-                f'- Lợi nhuận: {loi_nhuan_formatted}')
-    
+        result = (f'Nhóm thuỷ sản, Siêu thị {store_keyword} theo dữ liệu 1 tuần gần nhất:\n'
+                  f'- Số dòng dữ liệu: {num_rows}\n'
+                  f'- Nhập: {sl_nhap}\n'
+                  f'- Bán: {sl_ban}\n'
+                  f'- Tỉ lệ NG/Nhập: {rate_NG_nhap}%\n'
+                  f'- Huỷ và KK: {sl_huy_kk}\n'
+                  f'- Lợi nhuận: {loi_nhuan_formatted}')
+        logger.info(f"data_thuysan successful for store {store_keyword}")
+        return result
     except FileNotFoundError:
-        print("File 'data_thuysan.csv' not found. Please ensure the file is in the correct directory.")
-        return None
+        logger.error("File 'data_thuysan.csv' not found")
+        return "File 'data_thuysan.csv' không tìm thấy. Vui lòng kiểm tra lại!"
+    except Exception as e:
+        logger.error(f"Error in data_thuysan: {str(e)}")
+        return f"Lỗi khi xử lý dữ liệu siêu thị {store_keyword}: {str(e)}"
 
-# Hàm gọi phản hồi cho tin nhắn
+# Hàm xử lý tin nhắn
 def get_message_response(user_message):
-    if user_message == '!menu':
-        try:
-            return FlexSendMessage(alt_text="Menu", contents=MENU_FLEX_MESSAGE)
-        except Exception as e:
-            logger.error(f"Error creating FlexSendMessage: {str(e)}")
-            return TextSendMessage(text="Lỗi khi hiển thị menu, vui lòng thử lại!")
-    if 'tôm' in user_message.lower():
-        return TextSendMessage(text="meow")
-
-    if '!' in user_message:
-        # Extract the first sequence of digits using regex
-        match = re.search(r'\d+', user_message)
-        if match:
-            store_number = int(match.group())  # Convert to integer
-            # Call data_thuysan with the extracted number
-            result = data_thuysan(store_number)
-            return TextSendMessage(text=result)
+    logger.info(f"Received message: {user_message}")
+    
+    try:
+        # Handle !menu
+        if user_message == '!menu':
+            logger.info("Processing !menu command")
+            try:
+                return FlexSendMessage(alt_text="Menu", contents=MENU_FLEX_MESSAGE)
+            except Exception as e:
+                logger.error(f"Error creating FlexSendMessage: {str(e)}")
+                return TextSendMessage(text="Lỗi khi hiển thị menu, vui lòng thử lại!")
+        
+        # Handle messages with 'tôm'
+        if 'tôm' in user_message.lower():
+            logger.info("Detected 'tôm' in message")
+            return TextSendMessage(text="meow")
+        
+        # Handle messages with ! and numbers
+        if '!' in user_message:
+            logger.info("Detected '!' in message, searching for numbers")
+            # Extract the first sequence of digits using regex
+            match = re.search(r'\d+', user_message)
+            if match:
+                store_number = int(match.group())  # Convert to integer
+                logger.info(f"Extracted store number: {store_number}")
+                # Call data_thuysan with the extracted number
+                result = data_thuysan(store_number)
+                logger.info(f"Returning result for store {store_number}")
+                return TextSendMessage(text=result)
+            else:
+                logger.warning("No numbers found in message with '!'")
+        
+        # Không khớp với bất kỳ điều kiện nào
+        logger.info("Message did not match any conditions, returning None")
+        return None
+    
+    except Exception as e:
+        logger.error(f"Unexpected error in get_message_response: {str(e)}")
+        return TextSendMessage(text="Lỗi xử lý tin nhắn, vui lòng thử lại!")
     
     # Không trả về gì cho các tin nhắn khác
     return None
-    
     
     # Không trả về gì cho các tin nhắn khác
     return None
