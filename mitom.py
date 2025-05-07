@@ -116,10 +116,8 @@ def data_thuysan(store_keyword):
         rate_NG_nhap = round(rate_NG_nhap)
         sl_huy_kk = int(df_kq['Huỷ và KK'].sum())
         loi_nhuan = int(df_kq['Lợi nhuận'].sum())
-        num_rows = len(df_kq)
         loi_nhuan_formatted = "{:,}".format(loi_nhuan)
         result = (f'Nhóm thuỷ sản, Siêu thị {store_keyword} theo dữ liệu 1 tuần gần nhất:\n'
-                  f'- Số dòng dữ liệu: {num_rows}\n'
                   f'- Nhập: {sl_nhap}\n'
                   f'- Bán: {sl_ban}\n'
                   f'- Tỉ lệ NG/Nhập: {rate_NG_nhap}%\n'
